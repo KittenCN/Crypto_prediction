@@ -1,3 +1,6 @@
+from init import *
+from common import *
+
 # [
 #   [
 #     1499040000000,      // 开盘时间
@@ -14,4 +17,11 @@
 #     "17928899.62484339" // 请忽略该参数
 #   ]
 # ]
-
+    
+if __name__ == "__main__":
+    csv_files_list = glob.glob(ori_data_path + trading_pairs + "/" + trading_interval + "_extracted/" + "*.csv")
+    df_queue = load_data(csv_files=csv_files_list)
+    with open(pkl_path + "/" + pkl_name, 'wb') as f:
+        dill.dump(df_queue, f)
+    print("dump data to pkl file successfully!")
+    print("data_queue size:", df_queue.qsize())
