@@ -1,0 +1,14 @@
+binance-data-downloader
+torch
+torchvision
+tqdm
+numpy
+matplotlib
+pandas
+seaborn
+tushare
+mplfinance
+prefetch_generator
+dill
+transformers
+datasets
