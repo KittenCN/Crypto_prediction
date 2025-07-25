@@ -29,10 +29,10 @@ EPOCHS = 100
 NUM_WORKERS = 0 # number of workers for data loading, set to 0 for no multiprocessing
 
 TEST_INTERVAL = 50
-SAVE_INTERVAL = 1000
+SAVE_INTERVAL = 100
 
 OUTPUT_DIMENSION = 4
-INPUT_DIMENSION = 11 # number of features
+INPUT_DIMENSION = 29 # number of features
 PKL = True # save data as pkl
 BUFFER_SIZE = 1000 # size of the buffer for data loading
 D_MODEL = 512 # dimension of the model
@@ -59,10 +59,13 @@ name_list = [
     "trading_volume", "close_time", "transaction_volume", "number_of_trades",
     "active_buy_volume", "active_sell_volume", "ignore_data"
 ]
+    # "open_price", "high_price", "low_price", "close_price",
+    # "trading_volume", "transaction_volume", "number_of_trades",
+    # "active_buy_volume", "active_sell_volume", "ignore_data"
 use_list = [
-    0,1,1,1,1,
-    0,0,0,0,
-    0,0,0
+    1,1,1,1,
+    1,1,1,
+    1,1,1
 ]
 show_list = [
     0,1,1,1,1,

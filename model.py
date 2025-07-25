@@ -149,7 +149,7 @@ class Crypto_queue_dataset(Dataset):
                 dataFrame = self.data_queue.get(timeout=30)
             except queue.Empty:
                 return None
-            dataFrame.drop(['ts_code', 'Date'], axis=1, inplace=True)
+            dataFrame.drop(['open_time', 'close_time'], axis=1, inplace=True)
             # dataFrame = dataFrame.dropna()
             # dataFrame = dataFrame.fillna(-0.0)
             dataFrame = dataFrame.fillna(dataFrame.median(numeric_only=True))
@@ -226,9 +226,9 @@ class Crypto_queue_dataset(Dataset):
                         self.value_buffer.extend(value)
                         self.label_buffer.extend(label)
                     else:
-                        continue
+                        break
                 else:
-                    continue
+                    break
             except:
                 continue
 

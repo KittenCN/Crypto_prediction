@@ -30,7 +30,7 @@ match args.model:
 model = model.to(device, non_blocking=True)
 
 def train(epoch, dataloader, scaler, data_queue=None):
-    global loss_list, safe_save
+    global loss_list, safe_save, iteration
     model.train()
     subbar = tqdm(total=len(dataloader), leave=False)
     safe_save = False
