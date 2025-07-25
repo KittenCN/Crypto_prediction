@@ -7,6 +7,7 @@ from model import *
 parser = argparse.ArgumentParser(description="Train a Transformer model for time series prediction")
 parser.add_argument("--model", type=str, default="transformer", choices=["transformer", "lstm", "mlp"], help="Model type to use")
 parser.add_argument("--predict_days", type=int, default=0, help="Number of days to predict")
+parser.add_argument("--trend", type=int, default=0, help="Trend mode: 0 for no trend, 1 for trend") # noqa: E501
 args = parser.parse_args()
 assert args.model in ["transformer", "lstm", "mlp"], "Invalid model type specified"
 
@@ -29,9 +30,48 @@ match args.model:
 model = model.to(device, non_blocking=True)
 
 def train(epoch, dataloader, scaler, data_queue=None):
-    break
+    global loss_list, safe_save
+    model.train()
+    subbar = tqdm(total=len(dataloader), leave=False)
+    safe_save = False
+    for batch in dataloader:
+        safe_save = False
+        iteration += 1
+        data, label = batch
+        if batch is None or data is None or label is None:
+            subbar.update(1)
+            continue
+        data, label = data.to(device, non_blocking=True), label.to(device, non_blocking=True)
+        with autocast(device_type=device.type):
+            data = pad_input(data)
+            outputs = model.forward(data, label, int(args.predict_days))
+            if outputs.shape == label.shape:
+                loss = criterion(outputs, label)
+            subbar.update(1)
+            continue
+        optimizer.zero_grad()
+        if device.type == 'cuda' and is_number(str(loss.item())):
+            scaler.scale(loss).backward()
+            lr_scheduler.step()
+            scaler.step(optimizer)
+            scaler.update()
+        elif is_number(str(loss.item())):
+            loss.backward()
+            lr_scheduler.step()
+            optimizer.step()
+        if is_number(str(loss.item())):
+            loss_list.append(loss.item())
+        subbar.set_description(f"Epoch {epoch}, Iteration {iteration}, Loss: {loss.item():.6f}")
+        subbar.update(1)
+        safe_save = True
+    if iteration % SAVE_INTERVAL == 0:
+        thread_save_model(model, optimizer, save_path, best_model=False, predict_days=int(args.predict_days))
+        tqdm.write(f"Model saved at iteration {iteration}")
+    subbar.close()
 
 if __name__ == "__main__":
+    drop_last = False
+    last_loss = 1e10
     if torch.cuda.device_count() >= 1:
         print("Using", torch.cuda.device_count(), "GPUs")
         if torch.cuda.device_count() > 1:
@@ -74,4 +114,28 @@ if __name__ == "__main__":
             init_bar.close()
     print("Data loaded successfully, size:", data_queue.qsize())
 
-    
+    scaler = GradScaler(device=device)
+    pbar = tqdm(range(EPOCHS), desc="Training Epochs", leave=False)
+    last_eopch = 0
+    loss_list = []
+    mean_loss = 0
+    for epoch in range(0, EPOCHS):
+        if len(loss_list) == 0:
+            mean_loss = 0
+        else:
+            mean_loss = np.mean(loss_list)
+        pbar.set_description(f"Epoch {epoch + 1}/{EPOCHS}, Loss: {mean_loss:.6f}")
+        _data_queue = deep_copy_queue(data_queue)
+        tqdm.write("epoch: %d, data_queue size after deep copy: %d" % (epoch, data_queue.qsize()))
+        tqdm.write("epoch: %d, _stock_data_queue size: %d" % (epoch, _data_queue.qsize()))
+
+        train_dataset = Crypto_queue_dataset(mode=0, data_queue=_data_queue, label_num=OUTPUT_DIMENSION, 
+                                              buffer_size=BUFFER_SIZE, total_length=data_queue.qsize(),
+                                              predict_days=int(args.predict_days),trend=int(args.trend))
+        iteration = 0
+        loss_list = []
+        train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=False, drop_last=drop_last,
+                                      num_workers=NUM_WORKERS, pin_memory=True, collate_fn=custom_collate)
+        train(epoch+1, train_dataloader, scaler, data_queue=_data_queue)
+        pbar.update(1)
+pbar.close()

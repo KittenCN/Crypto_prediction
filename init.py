@@ -6,6 +6,7 @@ import dill
 import copy
 import threading
 import multiprocessing
+import re
 
 import numpy as np
 import pandas as pd
@@ -28,7 +29,7 @@ EPOCHS = 100
 NUM_WORKERS = 0 # number of workers for data loading, set to 0 for no multiprocessing
 
 TEST_INTERVAL = 50
-SAVE_INTERVAL = 10
+SAVE_INTERVAL = 1000
 
 OUTPUT_DIMENSION = 4
 INPUT_DIMENSION = 11 # number of features
