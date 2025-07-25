@@ -1,8 +1,13 @@
 import targets
 
+import mplfinance as mpf
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+
 from tqdm import tqdm
 from init import *
 from prefetch_generator import BackgroundGenerator
+from cycler import cycler
 
 class DataLoaderX(DataLoader):
     def __iter__(self):
@@ -20,7 +25,7 @@ class CustomSchedule(object):
         arg1 = self.steps ** -0.5
         arg2 = self.steps * (self.warmup_steps ** -1.5)
         self.steps += 1.
-        lr = (self.d_model ** -0.5) * min(arg1, arg2)
+        lr = (self.d_model ** -0.5) * min(arg1, arg2).item()
         for p in self.optimizer.param_groups:
             p['lr'] = lr
         return lr
@@ -195,4 +200,100 @@ def load_data(csv_files=None):
         combined_df = combined_df.drop(columns=["ignore_data"])
     combined_df = add_targets(combined_df)
     return combined_df
+
+def generate_attention_mask(input_data):
+    mask = (input_data != -0.0).any(dim=-1)  # Find non-padding positions 
+    mask = mask.to(torch.float32)
+    mask = mask.masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
+    mask = mask.T
+    return mask
+
+def data_wash(dataset,keepTime=False):
+    if keepTime:
+        dataset.fillna(axis=1,method='ffill')
+    else:
+        dataset.dropna()
+    df_queue.put(dataset)
+    return dataset
     
+def draw_Kline(df, period, symbol):
+    kwargs = dict(
+        type='candle',
+        mav=(7, 30, 60),
+        volume=True,
+        title=f'\nA_stock {symbol} candle_line',
+        ylabel='OHLC Candles',
+        ylabel_lower='Shares\nTraded Volume',
+        figratio=(15, 10),
+        figscale=2)
+
+    mc = mpf.make_marketcolors(
+        up='red',
+        down='green',
+        edge='i',
+        wick='i',
+        volume='in',
+        inherit=True)
+
+    s = mpf.make_mpf_style(
+        gridaxis='both',
+        gridstyle='-.',
+        y_on_right=False,
+        marketcolors=mc)
+
+    mpl.rcParams['axes.prop_cycle'] = cycler(
+        color=['dodgerblue', 'deeppink',
+               'navy', 'teal', 'maroon', 'darkorange',
+               'indigo'])
+
+    mpl.rcParams['lines.linewidth'] = .5
+
+    mpf.plot(df,
+             **kwargs,
+             style=s,
+             show_nontrading=False)
+
+    mpf.plot(df,
+             **kwargs,
+             style=s,
+             show_nontrading=False,
+             savefig=f'A_stock-{symbol} {period}_candle_line.jpg')
+    plt.show()
+
+def save_model(model, optimizer, save_path, best_model=False, predict_days=0):
+    if predict_days > 0:
+        if best_model is False:
+            torch.save(model.state_dict(), save_path + "_out" + str(OUTPUT_DIMENSION) + "_time" + str(SEQ_LEN) + "_pre" + str(predict_days) + "_Model.pkl")
+            torch.save(optimizer.state_dict(), save_path + "_out" + str(OUTPUT_DIMENSION) + "_time" + str(SEQ_LEN) + "_pre" + str(predict_days) + "_Optimizer.pkl")
+        elif best_model is True:
+            torch.save(model.state_dict(), save_path + "_out" + str(OUTPUT_DIMENSION) + "_time" + str(SEQ_LEN) + "_pre" + str(predict_days) + "_Model_best.pkl")
+            torch.save(optimizer.state_dict(), save_path + "_out" + str(OUTPUT_DIMENSION) + "_time" + str(SEQ_LEN) + "_pre" + str(predict_days) + "_Optimizer_best.pkl")
+    else:
+        if best_model is False:
+            torch.save(model.state_dict(), save_path + "_out" + str(OUTPUT_DIMENSION) + "_time" + str(SEQ_LEN) + "_Model.pkl")
+            torch.save(optimizer.state_dict(), save_path + "_out" + str(OUTPUT_DIMENSION) + "_time" + str(SEQ_LEN) + "_Optimizer.pkl")
+        elif best_model is True:
+            torch.save(model.state_dict(), save_path + "_out" + str(OUTPUT_DIMENSION) + "_time" + str(SEQ_LEN) + "_Model_best.pkl")
+            torch.save(optimizer.state_dict(), save_path + "_out" + str(OUTPUT_DIMENSION) + "_time" + str(SEQ_LEN) + "_Optimizer_best.pkl")
+
+def thread_save_model(model, optimizer, save_path, best_model=False, predict_days=0):
+    _model = copy.deepcopy(model)
+    _optimizer = copy.deepcopy(optimizer)
+    data_thread = threading.Thread(target=save_model, args=(_model, _optimizer, save_path, best_model, predict_days,))
+    data_thread.start()
+
+def deep_copy_queue(q):
+    new_q = multiprocessing.Queue()
+    # new_q = queue.Queue()
+    temp_q = []
+    while not q.empty():
+        try:
+            item = q.get_nowait()
+            temp_q.append(item)
+        except queue.Empty:
+            break
+    for item in temp_q:
+        new_q.put(item)
+        q.put(item)
+    return new_q
+

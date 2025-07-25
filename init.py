@@ -3,14 +3,22 @@ import queue
 import os
 import glob
 import dill
+import copy
+import threading
+import multiprocessing
 
 import numpy as np
 import pandas as pd
 import torch.nn as nn
 import torch.optim as optim
+import torch.nn.functional as F
 
 from torch.amp import autocast, GradScaler
 from torch.utils.data import Dataset, DataLoader
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+if device.type == 'cuda':
+    torch.backends.cudnn.benchmark = True
 
 SEQ_LEN = 5 # windows size
 LR = 0.001
@@ -28,6 +36,7 @@ PKL = True # save data as pkl
 BUFFER_SIZE = 1000 # size of the buffer for data loading
 D_MODEL = 512 # dimension of the model
 NHEAD = 8 # number of heads in the multi-head attention
+WARMUP_STEPS = 60000 # number of warmup steps for the learning rate scheduler
 
 loss_list=[]
 data_list=[]
@@ -50,15 +59,17 @@ name_list = [
     "active_buy_volume", "active_sell_volume", "ignore_data"
 ]
 use_list = [
-   1,1,1,1,1,
-   1,1,1,1,
-   1,1,0
+    0,1,1,1,1,
+    0,0,0,0,
+    0,0,0
 ]
 show_list = [
     0,1,1,1,1,
     0,0,0,0,
     0,0,0
 ]
+OUTPUT_DIMENSION = sum(use_list)
+assert OUTPUT_DIMENSION > 0
 
 def check_path(path):
     if not os.path.exists(path):
@@ -73,5 +84,13 @@ train_data_path = os.path.join(handle_path, "train_data.csv")
 test_data_path = os.path.join(handle_path, "test_data.csv")
 pkl_path =  r"pkl_handle/"
 pkl_name = "data.pkl"
+train_pkl_path = pkl_path + pkl_name
+lstm_path = r"model/lstm_model/"
+transformer_path = r"model/transformer_model/"
+cnnlstm_path = r"model/cnnlstm_model/"
+
 check_path(handle_path)
 check_path(pkl_path)
+check_path(lstm_path)
+check_path(transformer_path)
+check_path(cnnlstm_path)

@@ -21,7 +21,7 @@ from common import *
 if __name__ == "__main__":
     csv_files_list = glob.glob(ori_data_path + trading_pairs + "/" + trading_interval + "_extracted/" + "*.csv")
     df_queue = load_data(csv_files=csv_files_list)
-    with open(pkl_path + "/" + pkl_name, 'wb') as f:
+    with open(train_pkl_path, 'wb') as f:
         dill.dump(df_queue, f)
     print("dump data to pkl file successfully!")
     print("data_queue size:", df_queue.qsize())
