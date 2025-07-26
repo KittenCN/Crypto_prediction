@@ -30,6 +30,8 @@ def cmp_append(data, cmp_data):
     return data
 
 def add_targets(df):
+    df = df.sort_values(by='open_time', ascending=False).reset_index(drop=True)
+    
     times = np.array(df["open_time"])
     close = np.array(df["close_price"])
     hpri = np.array(df["high_price"])

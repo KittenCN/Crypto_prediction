@@ -234,6 +234,8 @@ class Crypto_queue_dataset(Dataset):
 
         if len(self.value_buffer) == 0 or len(self.label_buffer) == 0:
             return None
+        else:
+            return True
 
     def __getitem__(self, index):
         try:
