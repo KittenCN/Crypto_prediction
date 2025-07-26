@@ -31,7 +31,7 @@ EPOCHS = 100
 NUM_WORKERS = 0 # number of workers for data loading, set to 0 for no multiprocessing
 
 TEST_INTERVAL = 50
-SAVE_INTERVAL = 100
+SAVE_INTERVAL = 1000
 
 OUTPUT_DIMENSION = 4
 INPUT_DIMENSION = 29 # number of features
