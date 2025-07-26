@@ -76,9 +76,9 @@ def train(epoch, dataloader, scaler, data_queue=None):
             subbar.update(1)
         safe_save = True
         if iteration % SAVE_INTERVAL == 0:
-            thread_save_model(model, optimizer, save_path, best_model=False, predict_days=int(args.predict_days))
+            thread_save_model(model, optimizer, lr_scheduler, scaler, save_path, best_model=False, predict_days=int(args.predict_days))
             tqdm.write(f"Model saved at iteration {iteration}")
-    thread_save_model(model, optimizer, save_path, best_model=False, predict_days=int(args.predict_days))
+    thread_save_model(model, optimizer, lr_scheduler, scaler, save_path, best_model=False, predict_days=int(args.predict_days))
     tqdm.write(f"Model saved at iteration {iteration}")
     if len(dataloader) > 1:
         subbar.close()
@@ -95,11 +95,14 @@ if __name__ == "__main__":
     print(model)
     optimizer = optim.Adam(model.parameters(), lr=LR, weight_decay=WEIGHT_DECAY)
     lr_scheduler = CustomSchedule(d_model=D_MODEL, optimizer=optimizer, warmup_steps=WARMUP_STEPS)
+    scaler = GradScaler(device=device)
     if int(args.predict_days) > 0:
         if os.path.exists(save_path + "_out" + str(OUTPUT_DIMENSION) + "_time" + str(SEQ_LEN) + "_pre" + str(args.predict_days) + "_Model.pkl") and os.path.exists(save_path + "_out" + str(OUTPUT_DIMENSION) + "_time" + str(SEQ_LEN) + "_pre" + str(args.predict_days) + "_Optimizer.pkl"):
             print("Load model and optimizer from file")
             model.load_state_dict(torch.load(save_path + "_out" + str(OUTPUT_DIMENSION) + "_time" + str(SEQ_LEN) + "_pre" + str(args.predict_days) + "_Model.pkl"))
             optimizer.load_state_dict(torch.load(save_path + "_out" + str(OUTPUT_DIMENSION) + "_time" + str(SEQ_LEN) + "_pre" + str(args.predict_days) + "_Optimizer.pkl"))
+            lr_scheduler.load_state_dict(torch.load(save_path + "_out" + str(OUTPUT_DIMENSION) + "_time" + str(SEQ_LEN) + "_pre" + str(args.predict_days) + "_Scheduler.pkl"))
+            scaler.load_state_dict(torch.load(save_path + "_out" + str(OUTPUT_DIMENSION) + "_time" + str(SEQ_LEN) + "_pre" + str(args.predict_days) + "_Scaler.pkl"))
         else:
             print("No model and optimizer file, train from scratch")
     else:
@@ -107,6 +110,8 @@ if __name__ == "__main__":
             print("Load model and optimizer from file")
             model.load_state_dict(torch.load(save_path + "_out" + str(OUTPUT_DIMENSION) + "_time" + str(SEQ_LEN) + "_Model.pkl"))
             optimizer.load_state_dict(torch.load(save_path + "_out" + str(OUTPUT_DIMENSION) + "_time" + str(SEQ_LEN) + "_Optimizer.pkl"))
+            lr_scheduler.load_state_dict(torch.load(save_path + "_out" + str(OUTPUT_DIMENSION) + "_time" + str(SEQ_LEN) + "_Scheduler.pkl"))
+            scaler.load_state_dict(torch.load(save_path + "_out" + str(OUTPUT_DIMENSION) + "_time" + str(SEQ_LEN) + "_Scaler.pkl"))
         else:
             print("No model and optimizer file, train from scratch")
     
@@ -128,7 +133,6 @@ if __name__ == "__main__":
             init_bar.close()
     print("Data loaded successfully, size:", data_queue.qsize())
 
-    scaler = GradScaler(device=device)
     pbar = tqdm(range(EPOCHS), desc="Training Epochs", leave=False)
     last_eopch = 0
     loss_list = []

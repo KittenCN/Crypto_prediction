@@ -21,6 +21,20 @@ class CustomSchedule(object):
         for p in self.optimizer.param_groups:
             p['lr'] = lr
         return lr
+    
+    def state_dict(self):
+        return {
+            'd_model': self.d_model,
+            'warmup_steps': self.warmup_steps,
+            'steps': self.steps
+        }
+    
+    def load_state_dict(self, state_dict):
+        self.d_model = state_dict['d_model']
+        self.warmup_steps = state_dict['warmup_steps']
+        self.steps = state_dict['steps']
+        for p in self.optimizer.param_groups:
+            p['lr'] = (self.d_model ** -0.5) * min(self.steps ** -0.5, self.steps * (self.warmup_steps ** -1.5))
 
 class Crypto_Data(Dataset):
     # mode 0:train 1:test 2:predict
