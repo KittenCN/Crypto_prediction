@@ -17,7 +17,7 @@ class CustomSchedule(object):
         arg1 = self.steps ** -0.5
         arg2 = self.steps * (self.warmup_steps ** -1.5)
         self.steps += 1.
-        lr = (self.d_model ** -0.5) * min(arg1, arg2).item()
+        lr = (self.d_model ** -0.5) * min(arg1, arg2)
         for p in self.optimizer.param_groups:
             p['lr'] = lr
         return lr

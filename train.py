@@ -47,19 +47,15 @@ def train(epoch, dataloader, scaler, data_queue=None):
             outputs = model.forward(data, label, int(args.predict_days))
             if outputs.shape == label.shape:
                 loss = criterion(outputs, label)
-            subbar.update(1)
-            continue
+            else:
+                subbar.update(1)
+                continue
         optimizer.zero_grad()
-        if device.type == 'cuda' and is_number(str(loss.item())):
+        if is_number(str(loss.item())):
             scaler.scale(loss).backward()
             lr_scheduler.step()
             scaler.step(optimizer)
             scaler.update()
-        elif is_number(str(loss.item())):
-            loss.backward()
-            lr_scheduler.step()
-            optimizer.step()
-        if is_number(str(loss.item())):
             loss_list.append(loss.item())
         subbar.set_description(f"Epoch {epoch}, Iteration {iteration}, Loss: {loss.item():.6f}")
         subbar.update(1)
@@ -135,7 +131,7 @@ if __name__ == "__main__":
         iteration = 0
         loss_list = []
         train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=False, drop_last=drop_last,
-                                      num_workers=NUM_WORKERS, pin_memory=True, collate_fn=custom_collate)
+                                      num_workers=NUM_WORKERS, pin_memory=pin_memory, collate_fn=custom_collate)
         train(epoch+1, train_dataloader, scaler, data_queue=_data_queue)
         pbar.update(1)
 pbar.close()

@@ -18,8 +18,10 @@ from torch.amp import autocast, GradScaler
 from torch.utils.data import Dataset, DataLoader
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+pin_memory = False
 if device.type == 'cuda':
     torch.backends.cudnn.benchmark = True
+    pin_memory = True
 
 SEQ_LEN = 5 # windows size
 LR = 0.001
