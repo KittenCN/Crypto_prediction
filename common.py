@@ -164,8 +164,8 @@ def thread_save_model(model, optimizer, save_path, best_model=False, predict_day
     data_thread.start()
 
 def deep_copy_queue(q):
-    new_q = multiprocessing.Queue()
-    # new_q = queue.Queue()
+    # new_q = multiprocessing.Queue()
+    new_q = queue.Queue()
     temp_q = []
     while not q.empty():
         try:
