@@ -149,7 +149,10 @@ class Crypto_queue_dataset(Dataset):
                 dataFrame = self.data_queue.get(timeout=30)
             except queue.Empty:
                 return None
-            dataFrame.drop(['open_time', 'close_time'], axis=1, inplace=True)
+            if'open_time' in dataFrame.columns:
+                dataFrame.drop(['open_time'], axis=1, inplace=True)
+            if 'close_time' in dataFrame.columns:
+                dataFrame.drop(['close_time'], axis=1, inplace=True)
             # dataFrame = dataFrame.dropna()
             # dataFrame = dataFrame.fillna(-0.0)
             dataFrame = dataFrame.fillna(dataFrame.median(numeric_only=True))
@@ -207,10 +210,10 @@ class Crypto_queue_dataset(Dataset):
         return _value, _label
 
     def process_data(self):
+        global last_buffer_loop_count
         # Check if there is data in the queue
         if self.data_queue.empty():
             return None
-
         for _ in range(self.buffer_size):  # Loop for buffer_size times
             try:
                 raw_data = self.load_data()
@@ -220,6 +223,7 @@ class Crypto_queue_dataset(Dataset):
                         if raw_data is None:
                             break
                     if raw_data is not None:
+                        last_buffer_loop_count += 1
                         normalized_data = self.normalize_data(raw_data)
                         value, label = self.generate_value_label_tensors(normalized_data, self.label_num)
                         
@@ -229,7 +233,8 @@ class Crypto_queue_dataset(Dataset):
                         break
                 else:
                     break
-            except:
+            except Exception as e:
+                print(f"Error processing data: {e}")
                 continue
 
         if len(self.value_buffer) == 0 or len(self.label_buffer) == 0:
@@ -238,14 +243,21 @@ class Crypto_queue_dataset(Dataset):
             return True
 
     def __getitem__(self, index):
+        global last_buffer_loop_count, last_value_buffer, last_label_buffer
         try:
-            while self.buffer_index >= len(self.value_buffer):
-                self.value_buffer.clear()
-                self.label_buffer.clear()
-                self.buffer_index = 0
-                ans = self.process_data()
-                if ans is None:
-                    break
+            if last_buffer_loop_count > 0 and last_buffer_loop_count < self.buffer_size:
+                self.value_buffer = last_value_buffer
+                self.label_buffer = last_label_buffer
+            else:
+                while self.buffer_index >= len(self.value_buffer):
+                    self.value_buffer.clear()
+                    self.label_buffer.clear()
+                    self.buffer_index = 0
+                    ans = self.process_data()
+                    if ans is None:
+                        break
+                    last_label_buffer = self.label_buffer
+                    last_value_buffer = self.value_buffer
             if self.buffer_index >= len(self.value_buffer):
                 return None, None
             value, label = self.value_buffer[self.buffer_index], self.label_buffer[self.buffer_index]

@@ -76,6 +76,9 @@ show_list = [
 ]
 OUTPUT_DIMENSION = sum(use_list)
 assert OUTPUT_DIMENSION > 0
+last_buffer_loop_count = 0
+last_value_buffer = []
+last_label_buffer = []
 
 def check_path(path):
     if not os.path.exists(path):
