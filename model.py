@@ -87,6 +87,25 @@ class Crypto_Data(Dataset):
 
                 self.data[:, i] = (self.data[:, i] - test_mean_list[i]) / (test_std_list[i] + 1e-8)
         return self.data
+    
+    def denormalize_data(normalized_data, mean_list, std_list):
+        """
+        将归一化后的数据还原到原始值
+        :param normalized_data: 归一化后的数据 (numpy array 或 torch.Tensor)
+        :param mean_list: 每个特征的均值列表
+        :param std_list: 每个特征的标准差列表
+        :return: 还原后的数据
+        """
+        # 确保输入是 numpy array 或 torch.Tensor
+        if isinstance(normalized_data, torch.Tensor):
+            normalized_data = normalized_data.cpu().numpy()  # 转为 numpy array
+
+        # 还原归一化
+        denormalized_data = normalized_data.copy()
+        for i in range(len(mean_list)):
+            denormalized_data[:, i] = denormalized_data[:, i] * (std_list[i] + 1e-8) + mean_list[i]
+
+        return denormalized_data
 
     def generate_value_label_tensors(self, label_num):
         if self.mode in [0, 1]:
