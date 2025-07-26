@@ -66,8 +66,8 @@ name_list = [
     # "active_buy_volume", "active_sell_volume", "ignore_data"
 use_list = [
     1,1,1,1,
-    1,1,1,
-    1,1,1
+    0,0,0,
+    0,0,0
 ]
 show_list = [
     0,1,1,1,1,

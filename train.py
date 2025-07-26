@@ -117,12 +117,13 @@ if __name__ == "__main__":
 
     scaler = GradScaler(device=device)
     pbar = tqdm(range(EPOCHS), desc="Training Epochs", leave=False)
-    _data_queue = deep_copy_queue(data_queue)
+    _data_queue, _size = deep_copy_queue(data_queue)
+    assert _size - SEQ_LEN >= 0, "Data queue size must be greater than SEQ_LEN"
     # tqdm.write("epoch: %d, data_queue size after deep copy: %d" % (epoch, data_queue.qsize()))
     # tqdm.write("epoch: %d, _stock_data_queue size: %d" % (epoch, _data_queue.qsize()))
 
     train_dataset = Crypto_queue_dataset(mode=0, data_queue=_data_queue, label_num=OUTPUT_DIMENSION, 
-                                            buffer_size=BUFFER_SIZE, total_length=data_queue.qsize(),
+                                            buffer_size=BUFFER_SIZE, total_length= _size - SEQ_LEN,
                                             predict_days=int(args.predict_days),trend=int(args.trend))
     train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=False, drop_last=drop_last,
                                     num_workers=NUM_WORKERS, pin_memory=pin_memory, collate_fn=custom_collate)

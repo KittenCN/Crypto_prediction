@@ -167,16 +167,18 @@ def deep_copy_queue(q):
     # new_q = multiprocessing.Queue()
     new_q = queue.Queue()
     temp_q = []
+    size = 0
     while not q.empty():
         try:
             item = q.get_nowait()
             temp_q.append(item)
+            size += item.shape[0]
         except queue.Empty:
             break
     for item in temp_q:
         new_q.put(item)
         q.put(item)
-    return new_q
+    return new_q, size
 
 def custom_collate(batch):
     batch = list(filter(lambda x: x[0] is not None, batch))
