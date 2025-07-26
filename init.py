@@ -39,7 +39,7 @@ PKL = True # save data as pkl
 BUFFER_SIZE = 100 # size of the buffer for data loading
 D_MODEL = 512 # dimension of the model
 NHEAD = 8 # number of heads in the multi-head attention
-WARMUP_STEPS = 60000 # number of warmup steps for the learning rate scheduler
+WARMUP_STEPS = 4000 # number of warmup steps for the learning rate scheduler
 
 loss_list=[]
 data_list=[]
