@@ -7,6 +7,11 @@ from model import *
 parser = argparse.ArgumentParser(description="Train a Transformer model for time series prediction")
 parser.add_argument("--model", type=str, default="transformer", choices=["transformer", "lstm", "mlp"], 
                     help="Model type to use")
+parser.add_argument("--epochs", type=int, default=EPOCHS, help="Number of training epochs")
+parser.add_argument("--batch_size", type=int, default=BATCH_SIZE, help="Batch size for training")
+parser.add_argument("--save_interval", type=int, default=SAVE_INTERVAL, help="Interval for saving the model")
+parser.add_argument("--d_model", type=int, default=D_MODEL, help="Dimension of the model")
+parser.add_argument("--nhead", type=int, default=NHEAD, help="Number of heads in the multi-head attention")
 parser.add_argument("--predict_days", type=int, default=0, help="Number of days to predict")
 parser.add_argument("--trend", type=int, default=0, help="Trend mode: 0 for no trend, 1 for trend") # noqa: E501
 args = parser.parse_args()
@@ -29,6 +34,11 @@ match args.model:
         save_path = cnnlstm_path
         criterion = nn.MSELoss()
 model = model.to(device, non_blocking=True)
+EPOCHS = int(args.epochs)
+BATCH_SIZE = int(args.batch_size)
+SAVE_INTERVAL = int(args.save_interval)
+D_MODEL = int(args.d_model)
+NHEAD = int(args.nhead)
 
 def train(epoch, dataloader, scaler, data_queue=None):
     global loss_list, safe_save, iteration

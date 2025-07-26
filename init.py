@@ -31,12 +31,12 @@ EPOCHS = 100
 NUM_WORKERS = 0 # number of workers for data loading, set to 0 for no multiprocessing
 
 TEST_INTERVAL = 50
-SAVE_INTERVAL = 1000
+SAVE_INTERVAL = 100
 
 OUTPUT_DIMENSION = 4
 INPUT_DIMENSION = 29 # number of features
 PKL = True # save data as pkl
-BUFFER_SIZE = 1000 # size of the buffer for data loading
+BUFFER_SIZE = 100 # size of the buffer for data loading
 D_MODEL = 512 # dimension of the model
 NHEAD = 8 # number of heads in the multi-head attention
 WARMUP_STEPS = 60000 # number of warmup steps for the learning rate scheduler
