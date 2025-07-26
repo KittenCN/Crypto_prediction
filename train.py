@@ -65,9 +65,11 @@ def train(epoch, dataloader, scaler, data_queue=None):
             subbar.set_description(f"Epoch {epoch}, Iteration {iteration}, Loss: {loss.item():.6f}")
             subbar.update(1)
         safe_save = True
-    if iteration % SAVE_INTERVAL == 0:
-        thread_save_model(model, optimizer, save_path, best_model=False, predict_days=int(args.predict_days))
-        tqdm.write(f"Model saved at iteration {iteration}")
+        if iteration % SAVE_INTERVAL == 0:
+            thread_save_model(model, optimizer, save_path, best_model=False, predict_days=int(args.predict_days))
+            tqdm.write(f"Model saved at iteration {iteration}")
+    thread_save_model(model, optimizer, save_path, best_model=False, predict_days=int(args.predict_days))
+    tqdm.write(f"Model saved at iteration {iteration}")
     if len(dataloader) > 1:
         subbar.close()
 
