@@ -124,7 +124,8 @@ class Crypto_Data(Dataset):
 
 class Crypto_queue_dataset(Dataset):
     # mode 0:train 1:test 2:predict
-    def __init__(self, mode=0, data_queue=None, label_num=1, buffer_size=100, total_length=0, predict_days=0, trend=0):
+    def __init__(self, mode=0, data_queue=None, label_num=1, buffer_size=100, total_length=0, 
+                 predict_days=0, trend=0):
         try:
             assert mode in [0, 1, 2]
             self.mode = mode
@@ -315,10 +316,12 @@ class TransformerModel(nn.Module):
         elif mode in [1 ,2]:
             dropout = 0
 
-        self.transformer_encoder_layer = TransformerEncoderLayerWithNorm(d_model, nhead, dim_feedforward, norm=nn.LayerNorm(d_model), dropout=dropout)
+        self.transformer_encoder_layer = TransformerEncoderLayerWithNorm(d_model, nhead, dim_feedforward, 
+                                                                         norm=nn.LayerNorm(d_model), dropout=dropout)
         self.transformer_encoder = nn.TransformerEncoder(self.transformer_encoder_layer, num_layers)
 
-        self.transformer_decoder_layer = TransformerDecoderLayerWithNorm(d_model, nhead, dim_feedforward, norm=nn.LayerNorm(d_model), dropout=dropout)
+        self.transformer_decoder_layer = TransformerDecoderLayerWithNorm(d_model, nhead, dim_feedforward, 
+                                                                         norm=nn.LayerNorm(d_model), dropout=dropout)
         self.transformer_decoder = nn.TransformerDecoder(self.transformer_decoder_layer, num_layers)
 
         self.target_embedding = nn.Linear(output_dim, d_model)
@@ -341,7 +344,8 @@ class TransformerModel(nn.Module):
         if self.positional_encoding is None or self.positional_encoding.size(0) < src_seq_length:
             self.positional_encoding = self.generate_positional_encoding(src_seq_length, self.d_model).to(src.device)
 
-        src_positions = torch.arange(src_seq_length, device=src.device).unsqueeze(1).expand(src_seq_length, src_batch_size)
+        src_positions = torch.arange(src_seq_length, device=src.device).unsqueeze(1).expand(src_seq_length, 
+                                                                                            src_batch_size)
         src = src_embedding + self.positional_encoding[src_positions]
 
         memory = self.transformer_encoder(src, src_key_padding_mask=attention_mask)
@@ -353,7 +357,8 @@ class TransformerModel(nn.Module):
         tgt_embedding = self.target_embedding(tgt)
         tgt_seq_length = tgt.size(0)
 
-        tgt_positions = torch.arange(tgt_seq_length, device=tgt.device).unsqueeze(1).expand(tgt_seq_length, src_batch_size)
+        tgt_positions = torch.arange(tgt_seq_length, device=tgt.device).unsqueeze(1).expand(tgt_seq_length, 
+                                                                                            src_batch_size)
         tgt = tgt_embedding + self.positional_encoding[tgt_positions]
 
         output = self.transformer_decoder(tgt, memory)
